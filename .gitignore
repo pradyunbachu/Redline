@@ -72,3 +72,5 @@ weights/
 *.pickle
 !requirements.txt
 !part_costs.csv
+*.env
+.env

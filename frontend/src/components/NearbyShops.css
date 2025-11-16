@@ -1,0 +1,261 @@
+.nearby-shops {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nearby-shops-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.nearby-shops-header h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.nearby-shops-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.find-shops-btn {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.find-shops-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
+}
+
+.find-shops-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.radius-selector {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.radius-selector label {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.radius-selector select {
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.radius-selector select:hover:not(:disabled) {
+  border-color: var(--accent-color);
+}
+
+.radius-selector select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.shops-error {
+  padding: 1rem;
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: 8px;
+  color: #dc3545;
+  margin-top: 1rem;
+}
+
+.shops-results {
+  margin-top: 1.5rem;
+}
+
+.shops-results h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.shops-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.shop-card {
+  padding: 1.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.shop-card:hover {
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.shop-info {
+  flex: 1;
+}
+
+.shop-info h5 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.shop-address {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.shop-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rating-stars {
+  font-size: 0.9rem;
+}
+
+.rating-value {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.shop-status {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.shop-status:has-text("Open") {
+  color: #28a745;
+}
+
+.directions-btn {
+  padding: 0.6rem 1.2rem;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.directions-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(200, 16, 46, 0.3);
+}
+
+.shops-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.shops-empty .retry-btn {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.shops-empty .retry-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(200, 16, 46, 0.3);
+}
+
+.map-container {
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.map-placeholder {
+  padding: 2rem;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+.map-placeholder p {
+  margin: 0.5rem 0;
+}
+
+.map-instructions {
+  font-size: 0.85rem;
+  margin-top: 1rem !important;
+  line-height: 1.6;
+}
+
+.map-instructions code {
+  background: var(--bg-primary);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--accent-color);
+}
+
+@media (max-width: 768px) {
+  .shop-card {
+    flex-direction: column;
+  }
+
+  .directions-btn {
+    width: 100%;
+  }
+}
+

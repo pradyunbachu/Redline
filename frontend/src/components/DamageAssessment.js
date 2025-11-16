@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import './DamageAssessment.css';
+import React, { useState } from "react";
+import axios from "axios";
+import "./DamageAssessment.css";
+import ChatAgent from "./ChatAgent";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
 const DamageAssessment = () => {
   const [image, setImage] = useState(null);
@@ -11,10 +12,10 @@ const DamageAssessment = () => {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [vehicleInfo, setVehicleInfo] = useState({
-    make: '',
-    model: '',
-    year: '',
-    mileage: ''
+    make: "",
+    model: "",
+    year: "",
+    mileage: "",
   });
 
   const handleImageChange = (e) => {
@@ -33,17 +34,17 @@ const DamageAssessment = () => {
 
   const handleVehicleInfoChange = (e) => {
     const { name, value } = e.target;
-    setVehicleInfo(prev => ({
+    setVehicleInfo((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!image) {
-      setError('Please select an image first');
+      setError("Please select an image first");
       return;
     }
 
@@ -53,33 +54,37 @@ const DamageAssessment = () => {
 
     try {
       const formData = new FormData();
-      formData.append('image', image);
-      
+      formData.append("image", image);
+
       // Add vehicle info if provided
       const info = {};
       if (vehicleInfo.make) info.make = vehicleInfo.make;
       if (vehicleInfo.model) info.model = vehicleInfo.model;
       if (vehicleInfo.year) info.year = parseInt(vehicleInfo.year);
       if (vehicleInfo.mileage) info.mileage = parseInt(vehicleInfo.mileage);
-      
+
       if (Object.keys(info).length > 0) {
-        formData.append('vehicle_info', JSON.stringify(info));
+        formData.append("vehicle_info", JSON.stringify(info));
       }
 
       const response = await axios.post(`${API_URL}/api/assess`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
 
       if (response.data.success) {
         setResults(response.data);
       } else {
-        setError(response.data.error || 'Failed to assess damage');
+        setError(response.data.error || "Failed to assess damage");
       }
     } catch (err) {
-      console.error('Error:', err);
-      setError(err.response?.data?.error || err.message || 'An error occurred while processing the image');
+      console.error("Error:", err);
+      setError(
+        err.response?.data?.error ||
+          err.message ||
+          "An error occurred while processing the image"
+      );
     } finally {
       setLoading(false);
     }
@@ -91,10 +96,10 @@ const DamageAssessment = () => {
     setResults(null);
     setError(null);
     setVehicleInfo({
-      make: '',
-      model: '',
-      year: '',
-      mileage: ''
+      make: "",
+      model: "",
+      year: "",
+      mileage: "",
     });
   };
 
@@ -104,15 +109,25 @@ const DamageAssessment = () => {
         <div className="upload-section">
           <div className="upload-card">
             <h2>Upload Vehicle Image</h2>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="image-upload">
                 <label htmlFor="image-upload" className="upload-label">
                   {preview ? (
-                    <img src={preview} alt="Preview" className="preview-image" />
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      className="preview-image"
+                    />
                   ) : (
                     <div className="upload-placeholder">
-                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg
+                        width="64"
+                        height="64"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -184,23 +199,21 @@ const DamageAssessment = () => {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={!image || loading}
-                >
+                  disabled={!image || loading}>
                   {loading ? (
                     <>
                       <span className="spinner"></span>
                       Analyzing...
                     </>
                   ) : (
-                    'Assess Damage'
+                    "Assess Damage"
                   )}
                 </button>
                 {(preview || results) && (
                   <button
                     type="button"
                     className="btn btn-secondary"
-                    onClick={handleReset}
-                  >
+                    onClick={handleReset}>
                     Reset
                   </button>
                 )}
@@ -223,7 +236,9 @@ const DamageAssessment = () => {
                 <h2>Assessment Results</h2>
                 <div className="total-cost">
                   <span className="cost-label">Total Estimated Cost</span>
-                  <span className="cost-value">${results.total_estimated_cost.toLocaleString()}</span>
+                  <span className="cost-value">
+                    ${results.total_estimated_cost.toLocaleString()}
+                  </span>
                 </div>
               </div>
 
@@ -241,45 +256,86 @@ const DamageAssessment = () => {
                     <div className="valuation-row">
                       <span className="valuation-label">Vehicle Class:</span>
                       <span className="valuation-value">
-                        {results.valuation_info.luxury_tier || 'Standard'}
+                        {results.valuation_info.luxury_tier || "Standard"}
                       </span>
                     </div>
                     {results.valuation_info.make && (
                       <div className="valuation-row">
                         <span className="valuation-label">Make/Model:</span>
                         <span className="valuation-value">
-                          {results.valuation_info.make.charAt(0).toUpperCase() + results.valuation_info.make.slice(1)}
-                          {results.valuation_info.model && ` ${results.valuation_info.model.charAt(0).toUpperCase() + results.valuation_info.model.slice(1)}`}
+                          {results.valuation_info.make.charAt(0).toUpperCase() +
+                            results.valuation_info.make.slice(1)}
+                          {results.valuation_info.model &&
+                            ` ${
+                              results.valuation_info.model
+                                .charAt(0)
+                                .toUpperCase() +
+                              results.valuation_info.model.slice(1)
+                            }`}
                         </span>
                       </div>
                     )}
                     {results.valuation_info.year && (
                       <div className="valuation-row">
-                        <span className="valuation-label">Year Adjustment:</span>
+                        <span className="valuation-label">
+                          Year Adjustment:
+                        </span>
                         <span className="valuation-value">
-                          {results.valuation_info.year} ({results.valuation_info.year_adjustment > 1 ? '+' : ''}{((results.valuation_info.year_adjustment - 1) * 100).toFixed(0)}%)
+                          {results.valuation_info.year} (
+                          {results.valuation_info.year_adjustment > 1
+                            ? "+"
+                            : ""}
+                          {(
+                            (results.valuation_info.year_adjustment - 1) *
+                            100
+                          ).toFixed(0)}
+                          %)
                         </span>
                       </div>
                     )}
                     {results.valuation_info.mileage && (
                       <div className="valuation-row">
-                        <span className="valuation-label">Mileage Adjustment:</span>
+                        <span className="valuation-label">
+                          Mileage Adjustment:
+                        </span>
                         <span className="valuation-value">
-                          {results.valuation_info.mileage.toLocaleString()} mi ({results.valuation_info.mileage_adjustment > 1 ? '+' : ''}{((results.valuation_info.mileage_adjustment - 1) * 100).toFixed(0)}%)
+                          {results.valuation_info.mileage.toLocaleString()} mi (
+                          {results.valuation_info.mileage_adjustment > 1
+                            ? "+"
+                            : ""}
+                          {(
+                            (results.valuation_info.mileage_adjustment - 1) *
+                            100
+                          ).toFixed(0)}
+                          %)
                         </span>
                       </div>
                     )}
                     <div className="valuation-multiplier">
-                      <span className="multiplier-label">Total Cost Multiplier:</span>
-                      <span className={`multiplier-value ${results.vehicle_multiplier > 1 ? 'increase' : results.vehicle_multiplier < 1 ? 'decrease' : ''}`}>
-                        {results.vehicle_multiplier > 1 ? '↑' : results.vehicle_multiplier < 1 ? '↓' : ''} {results.vehicle_multiplier.toFixed(2)}x
+                      <span className="multiplier-label">
+                        Total Cost Multiplier:
+                      </span>
+                      <span
+                        className={`multiplier-value ${
+                          results.vehicle_multiplier > 1
+                            ? "increase"
+                            : results.vehicle_multiplier < 1
+                            ? "decrease"
+                            : ""
+                        }`}>
+                        {results.vehicle_multiplier > 1
+                          ? "↑"
+                          : results.vehicle_multiplier < 1
+                          ? "↓"
+                          : ""}{" "}
+                        {results.vehicle_multiplier.toFixed(2)}x
                       </span>
                       <span className="multiplier-explanation">
-                        {results.vehicle_multiplier > 1 
-                          ? 'Higher costs due to luxury vehicle, newer year, or low mileage'
+                        {results.vehicle_multiplier > 1
+                          ? "Higher costs due to luxury vehicle, newer year, or low mileage"
                           : results.vehicle_multiplier < 1
-                          ? 'Lower costs due to economy vehicle, older year, or high mileage'
-                          : 'Standard pricing applied'}
+                          ? "Lower costs due to economy vehicle, older year, or high mileage"
+                          : "Standard pricing applied"}
                       </span>
                     </div>
                   </div>
@@ -290,9 +346,9 @@ const DamageAssessment = () => {
                 <div className="visualization-section">
                   <h3>Damage Detection Visualization</h3>
                   <div className="visualization-container">
-                    <img 
-                      src={results.visualization} 
-                      alt="Damage assessment with bounding boxes" 
+                    <img
+                      src={results.visualization}
+                      alt="Damage assessment with bounding boxes"
                       className="visualization-image"
                     />
                     <div className="visualization-legend">
@@ -313,97 +369,180 @@ const DamageAssessment = () => {
                 </div>
               )}
 
-              {results.damage_instances && results.damage_instances.length > 0 && (
-                <div className="damage-list">
-                  <h3>Damage Details</h3>
-                  {results.damage_instances.map((damage, index) => (
-                    <div key={index} className="damage-item">
-                      <div className="damage-header">
-                        <span className="damage-number">#{index + 1}</span>
-                        <span className={`severity-badge severity-${damage.severity_class}`}>
-                          {damage.severity_class.toUpperCase()}
-                        </span>
-                      </div>
-                      
-                      <div className="damage-info">
-                        <div className="info-row">
-                          <span className="info-label">Type:</span>
-                          <span className="info-value">{damage.damage_class}</span>
+              {results.damage_instances &&
+                results.damage_instances.length > 0 && (
+                  <div className="damage-list">
+                    <h3>Damage Details</h3>
+                    {results.damage_instances.map((damage, index) => (
+                      <div key={index} className="damage-item">
+                        <div className="damage-header">
+                          <span className="damage-number">#{index + 1}</span>
+                          <span
+                            className={`severity-badge severity-${damage.severity_class}`}>
+                            {damage.severity_class.toUpperCase()}
+                          </span>
                         </div>
-                        <div className="info-row">
-                          <span className="info-label">Part:</span>
-                          <span className="info-value">{damage.part_name.replace('_', ' ')}</span>
-                        </div>
-                        <div className="info-row">
-                          <span className="info-label">Confidence:</span>
-                          <span className="info-value">{(damage.confidence * 100).toFixed(1)}%</span>
-                        </div>
-                        <div className="info-row">
-                          <span className="info-label">Severity Score:</span>
-                          <span className="info-value">{damage.severity_score}</span>
-                        </div>
-                      </div>
 
-                      <div className="cost-breakdown">
-                        {damage.cost_estimate.rule_breakdown.part_cost > 0 && (
-                          <div className="cost-item">
-                            <span className="cost-label">Part Cost:</span>
-                            <span className="cost-amount">
-                              ${damage.cost_estimate.rule_breakdown.part_cost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        <div className="damage-info">
+                          <div className="info-row">
+                            <span className="info-label">Type:</span>
+                            <span className="info-value">
+                              {damage.damage_class}
                             </span>
                           </div>
-                        )}
-                        <div className="cost-item">
-                          <span className="cost-label">Labor:</span>
-                          <span className="cost-amount">
-                            ${damage.cost_estimate.rule_breakdown.labor_cost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                          </span>
+                          <div className="info-row">
+                            <span className="info-label">Part:</span>
+                            <span className="info-value">
+                              {damage.part_name.replace("_", " ")}
+                            </span>
+                          </div>
+                          <div className="info-row">
+                            <span className="info-label">Confidence:</span>
+                            <span className="info-value">
+                              {(damage.confidence * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="info-row">
+                            <span className="info-label">Severity Score:</span>
+                            <span className="info-value">
+                              {damage.severity_score}
+                            </span>
+                          </div>
                         </div>
-                        {damage.cost_estimate.rule_breakdown.paint_cost > 0 && (
+
+                        <div className="cost-breakdown">
+                          {damage.cost_estimate.rule_breakdown.part_cost >
+                            0 && (
+                            <div className="cost-item">
+                              <span className="cost-label">Part Cost:</span>
+                              <span className="cost-amount">
+                                $
+                                {damage.cost_estimate.rule_breakdown.part_cost.toLocaleString(
+                                  undefined,
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
+                              </span>
+                            </div>
+                          )}
                           <div className="cost-item">
-                            <span className="cost-label">Paint & Materials:</span>
+                            <span className="cost-label">Labor:</span>
                             <span className="cost-amount">
-                              ${damage.cost_estimate.rule_breakdown.paint_cost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                              $
+                              {damage.cost_estimate.rule_breakdown.labor_cost.toLocaleString(
+                                undefined,
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }
+                              )}
                             </span>
                           </div>
-                        )}
-                        {damage.cost_estimate.rule_breakdown.shop_supplies > 0 && (
-                          <div className="cost-item">
-                            <span className="cost-label">Shop Supplies:</span>
+                          {damage.cost_estimate.rule_breakdown.paint_cost >
+                            0 && (
+                            <div className="cost-item">
+                              <span className="cost-label">
+                                Paint & Materials:
+                              </span>
+                              <span className="cost-amount">
+                                $
+                                {damage.cost_estimate.rule_breakdown.paint_cost.toLocaleString(
+                                  undefined,
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          {damage.cost_estimate.rule_breakdown.shop_supplies >
+                            0 && (
+                            <div className="cost-item">
+                              <span className="cost-label">Shop Supplies:</span>
+                              <span className="cost-amount">
+                                $
+                                {damage.cost_estimate.rule_breakdown.shop_supplies.toLocaleString(
+                                  undefined,
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          {damage.cost_estimate.rule_breakdown.disposal_fee >
+                            0 && (
+                            <div className="cost-item">
+                              <span className="cost-label">Disposal Fee:</span>
+                              <span className="cost-amount">
+                                $
+                                {damage.cost_estimate.rule_breakdown.disposal_fee.toLocaleString(
+                                  undefined,
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          {damage.cost_estimate.rule_breakdown.additional_fees >
+                            0 && (
+                            <div className="cost-item">
+                              <span className="cost-label">
+                                Additional Fees:
+                              </span>
+                              <span className="cost-amount">
+                                $
+                                {damage.cost_estimate.rule_breakdown.additional_fees.toLocaleString(
+                                  undefined,
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          <div className="cost-item total">
+                            <span className="cost-label">Total:</span>
                             <span className="cost-amount">
-                              ${damage.cost_estimate.rule_breakdown.shop_supplies.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                              $
+                              {damage.cost_estimate.final_cost.toLocaleString(
+                                undefined,
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }
+                              )}
                             </span>
                           </div>
-                        )}
-                        {damage.cost_estimate.rule_breakdown.disposal_fee > 0 && (
-                          <div className="cost-item">
-                            <span className="cost-label">Disposal Fee:</span>
-                            <span className="cost-amount">
-                              ${damage.cost_estimate.rule_breakdown.disposal_fee.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                            </span>
+                          <div className="action-badge">
+                            {damage.cost_estimate.rule_breakdown
+                              .replace_or_repair === "replace"
+                              ? "🔧 Replace"
+                              : "🛠️ Repair"}
                           </div>
-                        )}
-                        {damage.cost_estimate.rule_breakdown.additional_fees > 0 && (
-                          <div className="cost-item">
-                            <span className="cost-label">Additional Fees:</span>
-                            <span className="cost-amount">
-                              ${damage.cost_estimate.rule_breakdown.additional_fees.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                            </span>
-                          </div>
-                        )}
-                        <div className="cost-item total">
-                          <span className="cost-label">Total:</span>
-                          <span className="cost-amount">
-                            ${damage.cost_estimate.final_cost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                          </span>
-                        </div>
-                        <div className="action-badge">
-                          {damage.cost_estimate.rule_breakdown.replace_or_repair === 'replace' ? '🔧 Replace' : '🛠️ Repair'}
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
+
+              {results && (
+                <>
+                  <div className="chat-section">
+                    <h3>Ask About Your Estimate</h3>
+                    <ChatAgent
+                      damageResults={results}
+                      originalImage={preview}
+                    />
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -414,4 +553,3 @@ const DamageAssessment = () => {
 };
 
 export default DamageAssessment;
-
