@@ -44,10 +44,12 @@ class DamageAssessmentPipeline:
         self.model = YOLO(model_path)
         
         self.feature_extractor = SeverityFeatureExtractor()
+        # Use realistic hourly rate (minimum $100/hr)
+        actual_hourly_rate = max(hourly_rate, 100.0) if hourly_rate < 100 else hourly_rate
         self.cost_estimator = HybridCostEstimator(
             cost_table_path=cost_table_path,
             ml_model_path=ml_model_path,
-            hourly_rate=hourly_rate,
+            hourly_rate=actual_hourly_rate,
             ml_weight=ml_weight
         )
     
@@ -56,7 +58,7 @@ class DamageAssessmentPipeline:
         image_path: str,
         vehicle_bbox: Optional[tuple] = None,
         vehicle_info: Optional[Dict] = None,
-        conf_threshold: float = 0.25
+        conf_threshold: float = 0.01  # Confidence threshold for detections
     ) -> Dict:
         """
         Process a vehicle image and return damage assessment.
@@ -104,13 +106,104 @@ class DamageAssessmentPipeline:
             'vehicle_info': vehicle_info or {}
         }
     
+    def _calculate_iou(self, bbox1: np.ndarray, bbox2: np.ndarray) -> float:
+        """
+        Calculate Intersection over Union (IoU) between two bounding boxes.
+        
+        Args:
+            bbox1: [x1, y1, x2, y2]
+            bbox2: [x1, y1, x2, y2]
+            
+        Returns:
+            IoU value between 0 and 1
+        """
+        x1 = max(bbox1[0], bbox2[0])
+        y1 = max(bbox1[1], bbox2[1])
+        x2 = min(bbox1[2], bbox2[2])
+        y2 = min(bbox1[3], bbox2[3])
+        
+        if x2 <= x1 or y2 <= y1:
+            return 0.0
+        
+        intersection = (x2 - x1) * (y2 - y1)
+        area1 = (bbox1[2] - bbox1[0]) * (bbox1[3] - bbox1[1])
+        area2 = (bbox2[2] - bbox2[0]) * (bbox2[3] - bbox2[1])
+        union = area1 + area2 - intersection
+        
+        if union == 0:
+            return 0.0
+        
+        return intersection / union
+    
+    def _merge_overlapping_detections(self, predictions: List[Dict], iou_threshold: float = 0.5) -> List[Dict]:
+        """
+        Merge overlapping detections using IoU to avoid duplicates.
+        
+        Args:
+            predictions: List of detection dictionaries
+            iou_threshold: IoU threshold above which boxes are considered duplicates
+            
+        Returns:
+            Filtered list with duplicates merged
+        """
+        if len(predictions) == 0:
+            return []
+        
+        # Sort by confidence (highest first)
+        sorted_preds = sorted(predictions, key=lambda x: x['confidence'], reverse=True)
+        merged = []
+        used = [False] * len(sorted_preds)
+        
+        for i, pred1 in enumerate(sorted_preds):
+            if used[i]:
+                continue
+            
+            bbox1 = pred1['bbox']
+            merged_pred = pred1.copy()
+            count = 1
+            
+            # Check for overlapping boxes
+            for j, pred2 in enumerate(sorted_preds[i+1:], start=i+1):
+                if used[j]:
+                    continue
+                
+                bbox2 = pred2['bbox']
+                iou = self._calculate_iou(bbox1, bbox2)
+                
+                if iou > iou_threshold:
+                    # Merge: keep higher confidence, average bbox, combine classes if same
+                    used[j] = True
+                    count += 1
+                    
+                    # Average bbox coordinates (weighted by confidence)
+                    w1 = pred1['confidence']
+                    w2 = pred2['confidence']
+                    total_w = w1 + w2
+                    
+                    merged_bbox = (
+                        (bbox1[0] * w1 + bbox2[0] * w2) / total_w,
+                        (bbox1[1] * w1 + bbox2[1] * w2) / total_w,
+                        (bbox1[2] * w1 + bbox2[2] * w2) / total_w,
+                        (bbox1[3] * w1 + bbox2[3] * w2) / total_w
+                    )
+                    merged_pred['bbox'] = np.array(merged_bbox)
+                    
+                    # Use higher confidence
+                    merged_pred['confidence'] = max(pred1['confidence'], pred2['confidence'])
+            
+            merged.append(merged_pred)
+            used[i] = True
+        
+        return merged
+    
     def _run_detection_model(
         self, 
         image: np.ndarray,
-        conf_threshold: float = 0.25
+        conf_threshold: float = 0.01
     ) -> List[Dict]:
         """
         Run YOLOv8 detection model and return predictions.
+        Runs detection on the full image normally.
         
         Args:
             image: RGB image (H, W, 3)
@@ -122,29 +215,30 @@ class DamageAssessmentPipeline:
             - class: damage class name
             - confidence: detection confidence
         """
-        # Run YOLOv8 inference
+        # Run detection on full image
         results = self.model(image, conf=conf_threshold, verbose=False)
         
         predictions = []
         
         for result in results:
             boxes = result.boxes
-            
             if boxes is None or len(boxes) == 0:
                 continue
             
             for i in range(len(boxes)):
                 bbox = boxes.xyxy[i].cpu().numpy()  # [x1, y1, x2, y2]
-                class_id = int(boxes.cls[i])
-                class_name = result.names[class_id]
                 confidence = float(boxes.conf[i])
                 
-                predictions.append({
-                    'bbox': bbox,
-                    'class': class_name,
-                    'confidence': confidence,
-                    'class_id': class_id
-                })
+                if confidence >= conf_threshold:
+                    class_id = int(boxes.cls[i])
+                    class_name = result.names[class_id]
+                    
+                    predictions.append({
+                        'bbox': bbox,
+                        'class': class_name,
+                        'confidence': confidence,
+                        'class_id': class_id
+                    })
         
         return predictions
     
@@ -232,8 +326,7 @@ class DamageAssessmentPipeline:
         """
         Infer affected part from bounding box location.
         
-        This is a simplified heuristic based on spatial position.
-        For production, consider training a separate part detection model.
+        Improved heuristic that better detects rear and side parts.
         
         Args:
             bbox: [x1, y1, x2, y2]
@@ -245,48 +338,97 @@ class DamageAssessmentPipeline:
         x1, y1, x2, y2 = bbox
         center_x = (x1 + x2) / 2
         center_y = (y1 + y2) / 2
+        bbox_width = x2 - x1
+        bbox_height = y2 - y1
         
         img_h, img_w = image_shape[:2]
         
         # Normalize to 0-1
         norm_x = center_x / img_w
         norm_y = center_y / img_h
+        norm_width = bbox_width / img_w
+        norm_height = bbox_height / img_h
         
-        # Simple grid-based heuristics
-        # Top third of image (y < 0.33)
-        if norm_y < 0.33:
-            if norm_x < 0.3:
+        # More granular detection zones
+        # Top quarter (y < 0.25) - Roof, hood, windshield area
+        if norm_y < 0.25:
+            if norm_x < 0.2:
                 return 'headlight'
-            elif norm_x > 0.7:
+            elif norm_x > 0.8:
+                return 'taillight'
+            elif norm_x < 0.4:
                 return 'headlight'
+            elif norm_x > 0.6:
+                return 'taillight'
             else:
                 return 'hood'
         
-        # Middle third (0.33 <= y < 0.66)
-        elif norm_y < 0.66:
-            if norm_x < 0.25:
+        # Upper-middle (0.25 <= y < 0.45) - Hood, windshield, roof
+        elif norm_y < 0.45:
+            if norm_x < 0.2:
                 return 'front_fender'
-            elif norm_x > 0.75:
+            elif norm_x > 0.8:
                 return 'rear_fender'
+            elif norm_x < 0.4:
+                return 'hood'
+            elif norm_x > 0.6:
+                return 'trunk'
+            else:
+                return 'hood' if norm_x < 0.5 else 'trunk'
+        
+        # Middle section (0.45 <= y < 0.65) - Doors, fenders, side panels
+        elif norm_y < 0.65:
+            if norm_x < 0.2:
+                return 'front_fender'
+            elif norm_x > 0.8:
+                return 'rear_fender'
+            elif norm_x < 0.35:
+                return 'front_door'
+            elif norm_x > 0.65:
+                return 'rear_door'
             elif norm_x < 0.5:
                 return 'door'
             else:
                 return 'door'
         
-        # Bottom third (y >= 0.66)
+        # Lower-middle (0.65 <= y < 0.85) - Doors, bumpers, side panels
+        elif norm_y < 0.85:
+            if norm_x < 0.2:
+                return 'front_fender'
+            elif norm_x > 0.8:
+                return 'rear_fender'
+            elif norm_x < 0.35:
+                return 'front_door'
+            elif norm_x > 0.65:
+                return 'rear_door'
+            elif norm_x < 0.5:
+                return 'door'
+            else:
+                return 'door'
+        
+        # Bottom quarter (y >= 0.85) - Bumpers, wheels, lower panels
         else:
-            if norm_x < 0.35:
+            if norm_x < 0.2:
+                return 'front_bumper'
+            elif norm_x > 0.8:
+                return 'rear_bumper'
+            elif norm_x < 0.35:
                 return 'front_bumper'
             elif norm_x > 0.65:
                 return 'rear_bumper'
             else:
-                return 'bumper'
+                # Use aspect ratio to distinguish
+                if norm_width > norm_height * 1.5:
+                    # Wide bbox likely bumper
+                    return 'bumper' if norm_x < 0.5 else 'rear_bumper'
+                else:
+                    return 'bumper'
     
     def process_batch(
         self,
         image_paths: List[str],
         vehicle_info: Optional[Dict] = None,
-        conf_threshold: float = 0.25
+        conf_threshold: float = 0.01
     ) -> List[Dict]:
         """
         Process multiple images in batch.

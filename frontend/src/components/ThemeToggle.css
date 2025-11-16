@@ -1,0 +1,35 @@
+.theme-toggle {
+  background: transparent;
+  border: 2px solid var(--accent-color);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--accent-color);
+  padding: 0;
+}
+
+.theme-toggle:hover {
+  background: var(--accent-color);
+  color: var(--bg-primary);
+  transform: rotate(180deg);
+  box-shadow: 0 0 20px var(--accent-color);
+}
+
+[data-theme="light"] .theme-toggle:hover {
+  color: #ffffff;
+}
+
+.theme-toggle:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+.theme-toggle svg {
+  width: 24px;
+  height: 24px;
+}
+

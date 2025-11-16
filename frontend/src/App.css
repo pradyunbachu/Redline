@@ -1,0 +1,98 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-header {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .App-header {
+  background: linear-gradient(135deg, #000000 0%, #1a0000 100%);
+}
+
+[data-theme="light"] .App-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.App-header h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  text-shadow: 0 0 10px var(--accent-glow);
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* Remove h1 margin when logo is present */
+.header-content > div:first-child h1 {
+  margin-bottom: 0;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  opacity: 0.8;
+  font-weight: 400;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+  letter-spacing: 0.03em;
+  margin-top: 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2.5rem 1rem;
+  background: var(--bg-primary);
+}
+
+footer {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border-color);
+  transition: background-color 0.3s ease, color 0.3s ease,
+    border-color 0.3s ease;
+  letter-spacing: 0.01em;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .App-header h1 {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .header-content > div {
+    text-align: center;
+  }
+}
