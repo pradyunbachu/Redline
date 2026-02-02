@@ -285,56 +285,50 @@ def get_pipecat_agent():
 
 @app.route('/api/transcribe', methods=['POST'])
 def transcribe_audio():
-    """Transcribe audio using Groq's Whisper API."""
+    """Transcribe audio using Deepgram's API."""
     try:
         if 'audio' not in request.files:
             return jsonify({
                 'success': False,
                 'error': 'No audio file provided'
             }), 400
-        
+
         audio_file = request.files['audio']
         if audio_file.filename == '':
             return jsonify({
                 'success': False,
                 'error': 'Empty audio file'
             }), 400
-        
-        # Get Groq API key
-        api_key = os.getenv('GROQ_API_KEY', '').strip()
+
+        api_key = os.getenv('DEEPGRAM_API_KEY', '').strip()
         if not api_key:
             return jsonify({
                 'success': False,
-                'error': 'GROQ_API_KEY not found'
+                'error': 'DEEPGRAM_API_KEY not found'
             }), 500
-        
-        from groq import Groq
-        groq_client = Groq(api_key=api_key)
-        
-        # Read audio file
+
+        from deepgram import DeepgramClient, PrerecordedOptions
+
+        deepgram = DeepgramClient(api_key)
+
         audio_bytes = audio_file.read()
-        
-        # Create a file-like object for Groq API
-        # Groq's Whisper API expects a tuple: (filename, file_object, content_type)
-        audio_io = io.BytesIO(audio_bytes)
-        filename = audio_file.filename or 'recording.webm'
         content_type = audio_file.content_type or 'audio/webm'
-        
-        # Transcribe using Whisper Large v3 Turbo (fast and accurate)
-        # Groq's Whisper API is compatible with OpenAI's format
-        transcription = groq_client.audio.transcriptions.create(
-            file=(filename, audio_io, content_type),
-            model='whisper-large-v3-turbo',
-            language='en'
+
+        source = {'buffer': audio_bytes, 'mimetype': content_type}
+        options = PrerecordedOptions(
+            model='nova-2',
+            language='en',
+            smart_format=True,
         )
-        
-        transcript_text = transcription.text.strip()
-        
+
+        response = deepgram.listen.rest.v('1').transcribe_file(source, options)
+        transcript_text = response.results.channels[0].alternatives[0].transcript.strip()
+
         return jsonify({
             'success': True,
             'transcript': transcript_text
         })
-        
+
     except Exception as e:
         import traceback
         error_msg = str(e)
